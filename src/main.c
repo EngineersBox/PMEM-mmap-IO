@@ -13,7 +13,7 @@ int main(){
         PROT_READ | PROT_WRITE,
         MAP_SHARED | MAP_ANONYMOUS,
         0,0
-        );
+    );
 
     if (ptr == MAP_FAILED) {
         printf("Could not map file\n");
