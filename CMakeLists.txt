@@ -1,6 +1,25 @@
 cmake_minimum_required(VERSION 3.21)
 project(PMEM_mmap_IO C)
 
-set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
-add_executable(PMEM_mmap_IO src/main.c)
+# Include source content
+file (GLOB_RECURSE sourceFiles CONFIGURE_DEPENDS "src/*.c")
+file (GLOB_RECURSE headerFiles CONFIGURE_DEPENDS "src/*.h")
+
+set (includeDirs "")
+foreach (_headerFile ${headerFiles})
+    get_filename_component(_dir ${_headerFile} PATH)
+    list (APPEND includeDirs ${_dir})
+endforeach()
+list (REMOVE_DUPLICATES includeDirs)
+
+# Mark executable
+add_executable(PMEM_mmap_IO ${sourceFiles})
+target_include_directories(PMEM_mmap_IO PRIVATE ${includeDirs})
+
+set(PMDK_INCLUDE "C:/Users/DEG3NERAT3_/vcpkg/packages/pmdk_x64-windows/include")
+set(PMDK_LIBRARIES "C:/Users/DEG3NERAT3_/vcpkg/packages/pmdk_x64-windows/lib")
+target_include_directories(PMEM_mmap_IO PRIVATE ${PMDK_INCLUDE})
+target_link_libraries(PMEM_mmap_IO PRIVATE ${PMDK_LIBRARIES})

@@ -1,59 +1,89 @@
 #include <stdio.h>
-#include <unistd.h>
-#include <sys/wait.h>
-#include <sys/mman.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <libpmem.h>
 
-int main(){
+/* using 1k of pmem for this example */
+#define PMEM_LEN 1024
 
-    int arraySize = 5;
+// Maximum length of our buffer
+#define MAX_BUF_LEN 30
 
-    int *ptr = mmap(
-        NULL,
-        arraySize * sizeof(int),
-        PROT_READ | PROT_WRITE,
-        MAP_SHARED | MAP_ANONYMOUS,
-        0,0
-    );
+/****************************
+ * This function writes the "Hello..." string to persistent-memory.
+ *****************************/
+void write_hello_string (char *buf, char *path) {
+    char *pmemaddr;
+    size_t mapped_len;
+    int is_pmem;
 
-    if (ptr == MAP_FAILED) {
-        printf("Could not map file\n");
-        return 1;
+    /* create a pmem file and memory map it */
+    if ((pmemaddr = (char *) pmem_map_file(
+            path,
+            PMEM_LEN,
+            PMEM_FILE_CREATE,
+            0666,
+            &mapped_len,
+            &is_pmem
+        )) == NULL) {
+        perror("pmem_map_file");
+        exit(1);
+    }
+    /* store a string to the persistent memory */
+    strcpy(pmemaddr, buf);
+
+    /* flush above strcpy to persistence */
+    if (is_pmem)
+        pmem_persist(pmemaddr, mapped_len);
+    else
+        pmem_msync(pmemaddr, mapped_len);
+
+    /* output a string from the persistent memory to console */
+    printf("\nWrite the (%s) string to persistent memory.\n",pmemaddr);
+}
+
+/****************************
+ * This function reads the "Hello..." string from persistent-memory.
+ *****************************/
+void read_hello_string(char *path) {
+    char *pmemaddr;
+    size_t mapped_len;
+    int is_pmem;
+
+    /* open the pmem file to read back the data */
+    if ((pmemaddr = (char *) pmem_map_file(
+            path,
+            PMEM_LEN,
+            PMEM_FILE_CREATE,
+            0666,
+            &mapped_len,
+            &is_pmem
+        )) == NULL) {
+        perror("pmem_map_file");
+        exit(1);
+    }
+    /* Reading the string from persistent-memory and write to console */
+    printf("\nRead the (%s) string from persistent memory.\n",pmemaddr);
+}
+
+/****************************
+ * This main function gather from the command line and call the appropriate
+ * functions to perform read and write persistently to memory.
+ *****************************/
+int main(int argc, char *argv[]) {
+    char *path = argv[2];
+
+    // Create the string to save to persistent memory
+    char buf[MAX_BUF_LEN] = "Hello Persistent Memory!!!";
+
+    if (strcmp (argv[1], "-w") == 0) {
+        write_hello_string (buf, path);
+    } else if (strcmp (argv[1], "-r") == 0) {
+        read_hello_string(path);
+    } else {
+        fprintf(stderr, "Usage: %s <-w/-r> <filename>\n", argv[0]);
+        exit(1);
     }
 
-    for (int i = 0; i < arraySize; i++) {
-        ptr[i] = i + 1;
-    }
-
-    printf("Initial array: ");
-    for (int i = 0; i < arraySize; i++ ){
-        printf("%d ", ptr[i] );
-    }
-    printf("\n");
-
-    pid_t child_pid = fork();
-
-    if (child_pid == 0) {
-        //child
-        for (int i = 0; i < N; i++){
-            ptr[i] = ptr[i] * 10;
-        }
-    } else{
-        //parent
-        waitpid(child_pid, NULL, 0);
-        printf("\nParent:\n");
-
-        printf("Updated array: ");
-        for (int i = 0; i < arraySize; i++){
-            printf("%d ", ptr[i] );
-        }
-        printf("\n");
-    }
-
-    int err = munmap(ptr, arraySize * sizeof(int));
-
-    if (err != 0) {
-        printf("Could not unmap file\n");
-        return 1;
-    }
-    return 0;
 }
