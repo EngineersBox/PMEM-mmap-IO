@@ -9,7 +9,7 @@ cache_entry* getEntry(cache* ptr, uint32_t index) {
     return &ptr->entries[index];
 }
 
-int8_t putEntry(cache* ptr, cache_entry entry) {
+uint32_t putEntry(cache* ptr, cache_entry entry) {
     if (ptr == NULL
         || ptr->count >= ptr->allocatedSize
         || ptr->entries == NULL
@@ -17,7 +17,7 @@ int8_t putEntry(cache* ptr, cache_entry entry) {
         return -1;
     }
     ptr->entries[ptr->count++] = entry;
-    return 0;
+    return ptr->count - 1;
 }
 
 void* allocateEntries(cache* ptr, size_t size) {

@@ -12,16 +12,16 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    int8_t put_result = putEntry(&c, (cache_entry){ .ttl = 100, .value = 42 });
-    if (put_result == -1) {
+    uint32_t index = putEntry(&c, (cache_entry){ .ttl = 100, .value = 42 });
+    if (index == -1) {
         printf("Unable to put entry into cache\n");
         free(c.entries);
         return 1;
     }
 
-    cache_entry* returned = getEntry(&c, 0);
+    cache_entry* returned = getEntry(&c, index);
     if (returned == NULL) {
-        printf("Could not get entry at index 0 from cache\n");
+        printf("Could not get entry at index %d from cache\n", index);
         free(c.entries);
         return 1;
     }

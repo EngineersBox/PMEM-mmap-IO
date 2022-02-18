@@ -16,7 +16,7 @@ typedef struct {
 } cache;
 
 cache_entry* getEntry(cache* ptr, uint32_t index);
-int8_t putEntry(cache* ptr, cache_entry entry);
+uint32_t putEntry(cache* ptr, cache_entry entry);
 
 void* allocateEntries(cache* ptr, size_t count);
 int8_t freeEntries(cache* ptr);
